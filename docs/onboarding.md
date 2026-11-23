@@ -78,13 +78,15 @@
   - `loop()`를 정말 비워 두면 쉬지 않고 돌아 core 1을 계속 쓴다. 그래서 한 번 찍고 잠들게 했다 (관찰자 효과)
 - [x] **어느 코어에서 도는지 확인**: `xPortGetCoreID()`를 찍어본다. `loop()`와 내 태스크를 비교
   - 결과 (2026-11-23): 코어를 고정하지 않은 `my_task`는 줄마다 `core=0`. 만든 쪽(`setup()`, loopTask)은 core 1
-  - 해석(추정, 확인 필요): ESP32 FreeRTOS는 틱 처리를 core 0이 맡아서, 잠에서 깬 태스크를 core 0이 먼저 집어 가는 것으로 보인다.
+  - 첫 실행 코어 (2026-11-23 실측, `first=` 출력): **core 1**. 처음엔 만든 쪽과 같은 코어에서 시작하고, `vTaskDelay`에서 깨어난 뒤로는 core 0
+  - 해석(추정): ESP32 FreeRTOS는 틱 처리를 core 0이 맡아서, 잠에서 깬 태스크를 core 0이 먼저 집어 가는 것으로 보인다.
     affinity 없음 ≠ 무작위 배치. 실험 2 이후 core 1이 한가할 때와 바쁠 때를 바꿔 보며 확인한다
-- [ ] **스택 크기 감각**: `uxTaskGetStackHighWaterMark(NULL)`로 남은 스택을 확인. 스택을 일부러 작게 잡아 크래시도 내본다
+- [x] **스택 크기 감각**: `uxTaskGetStackHighWaterMark(NULL)`로 남은 스택을 확인. 스택을 일부러 작게 잡아 크래시도 내본다
   - 실험: `experiments/00_first_task` (`CRASH_DEMO`로 B-3 크래시)
   - 결과 (2026-11-23): 스택 4096바이트에서 `hwm=2436`으로 일정 → 가장 깊이 썼을 때 약 1660바이트 사용 (대부분 `printf`)
   - ESP32의 FreeRTOS는 스택 크기와 hwm을 **바이트**로 다룬다 (표준 FreeRTOS는 워드)
-  - 남은 것: `CRASH_DEMO 1`로 크래시 보기
+  - 크래시 (2026-11-23): `CRASH_DEMO 1`이면 `overflow_stack()`보다 먼저 첫 `printf`에서 `Stack canary watchpoint triggered (my_task)`, core 1.
+    백트레이스(`addr2line`): `my_task` → `Print::printf` → `vfprintf`. 재부팅 루프 중에는 USB가 사라져 BOOT+RESET으로 복구
 - [ ] **실험 01 실행**: `experiments/01_timeslice` 업로드 → `tools/plot_trace.py`로 간트 차트 확인
   - 완료 기준: A와 B가 약 1ms 간격으로 번갈아 나오는 줄무늬를 본다
 - [ ] **실험 01 변형**: `PRIO_B`를 3으로 올리고 다시 그린다. A가 B가 끝날 때까지 못 도는 것을 확인

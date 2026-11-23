@@ -16,7 +16,7 @@
  *   코어를 고정하지 않으면 스케줄러가 한가한 코어에 태스크를 배치한다.
  *
  * 예상 결과
- *   1초마다 `tick=N core=C hwm=B` 한 줄.
+ *   1초마다 `tick=N core=C hwm=B first=F` 한 줄. first는 my_task가 처음 실행된 코어.
  *   - core는 0 또는 1이 나오고 실행 중에 바뀔 수도 있다(코어 고정 안 함).
  *   - setup()/loop()는 core 1에서 돈다(Arduino 기본값).
  *   - hwm은 처음 몇 줄에서 줄어들다가 일정한 값으로 안정된다.
@@ -29,8 +29,8 @@
  *
  * 출력 형식 (시리얼, 115200)
  *   # setup() core=1 prio=1 stack=4096 bytes crash_demo=0
- *   tick=1 core=0 hwm=2436
- *   tick=2 core=0 hwm=2436
+ *   tick=12 core=0 hwm=2436 first=1
+ *   tick=13 core=0 hwm=2436 first=1
  *   ...
  *   # loop() core=1 prio=1
  *
@@ -38,7 +38,8 @@
  *   python tools/build.py experiments/00_first_task --upload
  *   시리얼 모니터 115200
  *
- * 상태: 2026-11-23 보드에서 실행 확인 (위 출력의 hwm은 실측값). CRASH_DEMO 1은 아직 안 돌려 봄.
+ * 상태: 2026-11-23 보드에서 실행 확인 (위 출력은 실측값). 처음엔 core 1, 깨어난 뒤엔 core 0.
+ *       CRASH_DEMO 1도 확인: 첫 printf에서 Stack canary watchpoint triggered (my_task), core 1.
  */
 #include <Arduino.h>
 
@@ -74,12 +75,16 @@ static void __attribute__((noinline)) overflow_stack(void) {
 // B-1: loop()와 별개로 도는 내 태스크. loopTask와 같은 우선순위(1)다.
 static void my_task(void *arg) {
   (void)arg;
+  // B-2: 처음 실행된 코어를 출력보다 먼저 적어 둔다. 리셋 직후 USB가 다시 붙는 동안
+  // 첫 줄을 놓쳐도, 매 줄의 first=로 언제든 확인할 수 있다.
+  const int first_core = (int)xPortGetCoreID();
   for (;;) {
     tick++;
-    Serial.printf("tick=%lu core=%d hwm=%u\n",
+    Serial.printf("tick=%lu core=%d hwm=%u first=%d\n",
                   (unsigned long)tick,
                   (int)xPortGetCoreID(),                  // B-2: 지금 도는 코어
-                  (unsigned)uxTaskGetStackHighWaterMark(NULL));  // B-3: 남은 스택(바이트)
+                  (unsigned)uxTaskGetStackHighWaterMark(NULL),  // B-3: 남은 스택(바이트)
+                  first_core);                            // B-2: 처음 실행된 코어
 #if CRASH_DEMO
     overflow_stack();  // 스택을 넘겨 크래시를 일으킨다
 #endif
