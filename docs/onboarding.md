@@ -73,8 +73,11 @@
 ## B. FreeRTOS 첫 만남
 - [ ] **내 태스크 하나 만들기**: `xTaskCreate`로 1초마다 메시지를 찍는 태스크. `loop()`는 비워둔다
   - 소프트웨어 비유: 스레드 하나 띄우기
+  - 실험: `experiments/00_first_task` (`CRASH_DEMO`로 B-3 크래시)
 - [ ] **어느 코어에서 도는지 확인**: `xPortGetCoreID()`를 찍어본다. `loop()`와 내 태스크를 비교
+  - 실험: `experiments/00_first_task` (`CRASH_DEMO`로 B-3 크래시)
 - [ ] **스택 크기 감각**: `uxTaskGetStackHighWaterMark(NULL)`로 남은 스택을 확인. 스택을 일부러 작게 잡아 크래시도 내본다
+  - 실험: `experiments/00_first_task` (`CRASH_DEMO`로 B-3 크래시)
 - [ ] **실험 01 실행**: `experiments/01_timeslice` 업로드 → `tools/plot_trace.py`로 간트 차트 확인
   - 완료 기준: A와 B가 약 1ms 간격으로 번갈아 나오는 줄무늬를 본다
 - [ ] **실험 01 변형**: `PRIO_B`를 3으로 올리고 다시 그린다. A가 B가 끝날 때까지 못 도는 것을 확인
