@@ -2,6 +2,9 @@
 backup/
 *.bin
 
+# 빌드 산출물 (tools/build.py가 만드는 arduino-cli 빌드 폴더)
+.build/
+
 # Python
 __pycache__/
 *.pyc
