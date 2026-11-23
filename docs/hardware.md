@@ -9,6 +9,8 @@
 - **주의**: LCD가 GPIO 대부분을 쓴다. 리셋과 백라이트 등은 CH422G IO 확장 칩으로 제어한다. 자유 핀이 적다
 - 전원: 터미널 블록 7~36V DC, USB-C, 3.7V 리튬 배터리 (GH1.25 커넥터, 배터리는 별매)
 - 다운로드 모드: BOOT 버튼을 누른 채 전원을 넣는다
+  - 평소에는 필요 없다. 내장 USB Serial/JTAG가 자동으로 리셋해 다운로드 모드에 넣는다 (2026-11-23 LVGL 데모 업로드에서 확인).
+    펌웨어가 USB를 망가뜨렸을 때처럼 자동 리셋이 안 될 때만 쓴다
 - USB-C는 하나이고, 칩 내장 USB Serial/JTAG에 연결된다. Windows 장치 관리자에는 `USB JTAG/serial debug unit`으로 뜬다 (2026-11-23 실측)
   - Arduino에서 `Serial`을 쓰려면 `USB CDC On Boot` = `Enabled`
   - 별도 JTAG 장비 없이 USB 하나로 OpenOCD + GDB 디버깅이 된다 (ESP-IDF 단계에서 활용)

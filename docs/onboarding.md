@@ -4,11 +4,11 @@
 
 ## A-0. 초기불량 점검 (아무것도 굽기 전에)
 위키에 공장 펌웨어가 들어 있는지는 나와 있지 않다. 그래서 전원을 넣었을 때 보이는 상태를 먼저 기록해 둔다.
-- [ ] **외관**: 화면 깨짐, 커넥터·터미널 블록 들뜸, 부품 탈락이 없다. 배터리 스위치는 OFF (배터리 없음)
-- [ ] **첫 전원**: USB-C로 5V 1A 이상 공급 (위키 소비전력 450mA, 전원이 약하면 화면이 빨갛게 될 수 있다고 함)
+- [x] **외관**: 화면 깨짐, 커넥터·터미널 블록 들뜸, 부품 탈락이 없다. 배터리 스위치는 OFF (배터리 없음)
+- [x] **첫 전원**: USB-C로 5V 1A 이상 공급 (위키 소비전력 450mA, 전원이 약하면 화면이 빨갛게 될 수 있다고 함)
   - 전원이 켜지는지, 화면에 무언가 뜨는지, 터치가 반응하는지 기록한다
   - 결과 (2026-11-23): 공장 데모 펌웨어가 들어 있고, 전원을 넣으면 데모 화면이 뜬다
-  - 공장 데모는 부팅할 때 R·G·B·W 단색 화면을 차례로 띄운다 → 죽은 픽셀 없음 확인. 터치 점검은 진행 중
+  - 공장 데모는 부팅할 때 R·G·B·W 단색 화면을 차례로 띄운다 → 죽은 픽셀 없음 확인. 터치 정상, 10분 켜 두어도 이상 없음
 - [x] **포트 인식**: 장치 관리자에 COM 포트가 뜨고 장치 이름이 보인다 → CH343 경유인지 칩 내장 USB인지 여기서 확정
   - 결과 (2026-11-23): `USB JTAG/serial debug unit` → 칩 내장 USB Serial/JTAG. CH343을 거치지 않는다
 - [ ] **화면이 비어 있으면**: 데모 zip의 `Firmware\bin` 테스트 펌웨어를 `flash_download_tool`로 굽는다
@@ -16,7 +16,7 @@
 - [ ] **기능별 점검** (Arduino 환경이 갖춰진 뒤, 데모 예제로)
   - `01_I2C_Test`: CH422G(0x20~0x27, 0x30~0x3F), RTC(0x51), 터치(0x5D) 주소가 잡힌다
   - `08_DrawColorBar`: 색 막대가 B-G-R 순서로 나오고, 죽은 픽셀이나 줄 무늬가 없다
-  - `09_lvgl_Porting`: 화면 구석까지 터치가 반응한다
+  - `09_lvgl_Porting`: 화면 구석까지 터치가 반응한다 → 통과 (2026-11-23, A-5에서 확인)
   - `04_RTC_Test`: 시간이 흐르고 알람이 울린다
   - `05_IO_Test`: DO0↔DI0, DO1↔DI1을 점퍼선으로 잇는다. 초록 화면이면 통과, 빨강이면 실패
   - `03_SD_Test`: TF 카드가 있을 때만. 종류와 용량을 인식한다
@@ -48,8 +48,27 @@
   - 이 보드는 칩 내장 USB를 쓰므로 Tools → `USB CDC On Boot` = `Enabled`, `USB Mode` = `Hardware CDC and JTAG`로 둔다
     (Disabled면 `Serial`이 USB에 연결되지 않은 UART0으로 나가서 아무것도 안 찍힌다)
   - 완료 기준: 1초마다 `millis()` 값이 찍힌다
-- [ ] **위키 LVGL 데모 실행**: 화면이 뜨고 터치에 반응한다
+- [x] **위키 LVGL 데모 실행**: 화면이 뜨고 터치에 반응한다
   - 완료 기준: 데모 화면에서 버튼을 눌러 반응을 확인
+  - 결과 (2026-11-23): `lv_demo_widgets`가 화면 전체에 뜨고 탭·버튼·슬라이더·구석 터치 모두 반응
+  - 라이브러리: 데모 zip의 `Arduino/libraries/` 안의 폴더 4개와 `lv_conf.h`를 `Documents\Arduino\libraries\`에 복사한다
+    - lvgl 8.4.0, ESP32_Display_Panel 1.0.0, ESP32_IO_Expander 1.0.1, **esp-lib-utils 0.1.2** (위키에는 없지만 필요)
+    - `ESP32_Display_Panel/build/`는 Waveshare 쪽 CMake 빌드 찌꺼기라 빼고 복사했다
+  - Partition Scheme = `16M Flash (3MB APP/9.9MB FATFS)`. 빌드 크기 약 771KB
+  - **함정 3: 데모 설정이 4.3B용이 아니다.** `09_lvgl_Porting/esp_panel_board_custom_conf.h`가 5인치 보드(5/5B)와 같이 쓰는 파일이고,
+    기본값이 1024×600에 터치 꺼짐이다. 그대로 올리면 화면이 잘려 나오고 터치가 안 된다 (실제로 겪음). 아래 네 줄을 고친다
+    - `ESP_PANEL_USE_1024_600_LCD` `(1)` → `(0)` (800×480)
+    - `ESP_OPEN_TOUCH` `0` → `1`
+    - 800×480 쪽 `ESP_PANEL_BOARD_LCD_RGB_VBP`, `_VFP` `(16)` → `(8)`
+      (라이브러리에 든 4.3B 정의 `src/board/supported/waveshare/BOARD_WAVESHARE_ESP32_S3_TOUCH_LCD_4_3_B.h`와 맞춘 값.
+      나머지 타이밍, GT911, INT=GPIO4, CH422G는 원래 같다)
+  - 첫 빌드는 LVGL 파일이 많아 10분 넘게 걸렸다. 다음 빌드부터는 캐시 덕분에 빨라진다
+  - 업로드가 `Could not open COM9, the port doesn't exist`로 실패하면 IDE의 **Serial Monitor가 포트를 잡고 있는 것**이다.
+    esptool v5는 같은 상황을 `PermissionError(13) 액세스가 거부되었습니다`로 보여 준다. COM 포트는 한 번에 한 프로그램만 연다
+    (파일 독점 잠금과 같다). Serial Monitor를 닫고 다시 올린다
+  - 이번에는 BOOT+RESET 없이 자동 리셋으로 업로드됐다. 처음 한 번만 수동 다운로드 모드가 필요했다
+  - 데모 안의 RTOS: LVGL은 자기 태스크에서 화면을 그리고 터치를 처리한다. `loop()`가 `delay(1000)`로 잠들어도 화면은 계속 움직인다.
+    LVGL은 스레드 안전하지 않아서 `setup()`은 UI를 만들기 전에 `lvgl_port_lock()`(뮤텍스)을 잡는다
 
 ## B. FreeRTOS 첫 만남
 - [ ] **내 태스크 하나 만들기**: `xTaskCreate`로 1초마다 메시지를 찍는 태스크. `loop()`는 비워둔다
