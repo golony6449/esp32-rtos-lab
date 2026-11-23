@@ -12,6 +12,11 @@
 - USB-C는 하나이고, 칩 내장 USB Serial/JTAG에 연결된다. Windows 장치 관리자에는 `USB JTAG/serial debug unit`으로 뜬다 (2026-11-23 실측)
   - Arduino에서 `Serial`을 쓰려면 `USB CDC On Boot` = `Enabled`
   - 별도 JTAG 장비 없이 USB 하나로 OpenOCD + GDB 디버깅이 된다 (ESP-IDF 단계에서 활용)
+- 회로도 확인 결과 (2026-11-23, [Sch.pdf](https://files.waveshare.com/wiki/ESP32-S3-Touch-LCD-4.3B/ESP32-S3-Touch-LCD-4.3B-Sch.pdf))
+  - USB-C D+/D- → `USBH_N/P` → 0Ω 저항 R27/R28 → `ESP_USB_N/P` → GPIO19/GPIO20. 중간에 스위치나 다른 칩이 없다
+  - **이 보드에는 CH343이 없다.** 위키 자료 목록의 CH343 데이터시트는 공용 자료일 뿐이다. 자동 리셋 회로(DTR/RTS → EN/IO0)도 없다
+  - UART0(GPIO43 `TXD0`, GPIO44 `RXD0`)은 RS485 트랜시버(SP3485)로 간다. 그래서 `USB CDC On Boot`가 Disabled면 `Serial` 출력이 RS485 단자로 나간다
+  - 회로도 메모: 화면 혼자 약 550mA를 쓰고, PC USB는 500mA 미만일 수 있다. PC에 연결해 디버깅할 때는 배터리 스위치를 OFF로 둔다
 - 공식 위키: https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-4.3B (Arduino와 ESP-IDF 데모 있음)
 
 ## M5Stack BALA2 Fire
