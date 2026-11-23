@@ -29,8 +29,8 @@
  *
  * 출력 형식 (시리얼, 115200)
  *   # setup() core=1 prio=1 stack=4096 bytes crash_demo=0
- *   tick=1 core=0 hwm=3948
- *   tick=2 core=0 hwm=3948
+ *   tick=1 core=0 hwm=2436
+ *   tick=2 core=0 hwm=2436
  *   ...
  *   # loop() core=1 prio=1
  *
@@ -38,7 +38,7 @@
  *   python tools/build.py experiments/00_first_task --upload
  *   시리얼 모니터 115200
  *
- * 상태: 실제 보드에서 아직 컴파일·실행 전. 처음 돌릴 때 함께 검증할 것.
+ * 상태: 2026-11-23 보드에서 실행 확인 (위 출력의 hwm은 실측값). CRASH_DEMO 1은 아직 안 돌려 봄.
  */
 #include <Arduino.h>
 
