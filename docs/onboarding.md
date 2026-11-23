@@ -23,17 +23,28 @@
   - RS485, CAN은 상대 장치(USB-CAN 등)가 필요하므로 생긴 뒤에 한다
 
 ## A. 4.3B 보드 첫날
-- [ ] **개발 환경**: Arduino IDE에 Espressif ESP32 보드 패키지 설치. 버전은 Waveshare 위키 권장 버전에 맞춘다
+- [x] **개발 환경**: Arduino IDE에 Espressif ESP32 보드 패키지 설치. 버전은 Waveshare 위키 권장 버전에 맞춘다
   - 위키 확인 결과 (2026-11-23): IDE ≥ 1.8, 설치 경로에 한글·중문 금지. `esp32 by Espressif Systems` **3.0.7**
     (위키는 3.0.0 이상을 요구하고, 오프라인 패키지도 3.0.7이다. RS485 수신 문제가 생기면 3.0.7로 내리라고 한다)
   - 보드 매니저 URL: `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
+  - 설치 완료 (2026-11-23): Arduino IDE 2.x + esp32 3.0.7. 최신은 4.0.0(11/19, ESP-IDF 6.1)과 3.3.13이지만,
+    위키가 검증한 3.0.7로 기준점을 먼저 잡는다. 데모와 실험 01이 통과하면 3.3.13 → 4.0.0 순서로 한 계단씩 올린다
   - 라이브러리: ESP32_Display_Panel ≥ 0.1.4, ESP32_IO_Expander ≥ 0.0.4, lvgl **8.4.0**과 `lv_conf.h`는 데모 zip에 든 파일로 오프라인 설치한다
   - 데모: `ESP32-S3-Touch-LCD-4.3B-BOX-Demo.zip`의 Arduino 예제 `09_lvgl_Porting`이 LVGL과 터치(GT911) 데모다
-- [ ] **보드 설정**: Board = `ESP32S3 Dev Module`, PSRAM = `OPI PSRAM`, Flash Size = `16MB`
+- [x] **보드 설정**: Board = `ESP32S3 Dev Module`, PSRAM = `OPI PSRAM`, Flash Size = `16MB`
   - 이 설정이 틀리면 화면이 안 나오는 경우가 많다
-- [ ] **포트 인식**: USB-C(데이터 케이블)로 연결해 장치 관리자에 COM 포트가 보인다
+  - 함정: 보드를 꽂으면 IDE가 USB ID(PID 0x1001)를 보고 `ESP32 Family Device`를 자동 선택한다.
+    이 보드로는 컴파일이 `exit status 1`로 실패하므로 Tools → Board에서 `ESP32S3 Dev Module`을 직접 고른다
+  - 함정 2: 보드를 바꾸면 Tools 설정(USB CDC On Boot, PSRAM 등)이 기본값으로 돌아간다. 보드를 고른 **뒤에** 설정을 맞춘다.
+    시리얼 테스트 스케치 기준으로 `Sketch uses`가 약 302KB면 CDC가 켜진 빌드이고, 약 278KB면 꺼진 빌드다
+    - 증상 (2026-11-23 실제로 겪음): 시리얼 모니터에 `ESP-ROM:esp32s3-20210327` 한 줄만 나오고 그 뒤로 아무것도 안 나온다
+    - `ESP-ROM:...`은 칩의 ROM이 찍는 줄이다. ROM은 설정과 상관없이 내장 USB로도 출력한다
+    - 그다음 스케치가 시작되면 `Serial` 출력은 USB가 아니라 UART0으로 나간다. 회로도상 UART0은 RS485 단자에 연결되어 있다.
+      그래서 프로그램은 돌고 있지만, 출력이 보고 있지 않은 단자로 나간다 (stdout이 다른 곳으로 리다이렉트된 상태)
+  - 첫 업로드 때 `ClearCommError ... PermissionError(13)`이 나오면 BOOT를 누른 채 RESET → BOOT 떼기로 다운로드 모드에 넣고 업로드한다
+- [x] **포트 인식**: USB-C(데이터 케이블)로 연결해 장치 관리자에 COM 포트가 보인다
   - 업로드가 안 되면 BOOT 버튼을 누른 채 전원을 넣어 다운로드 모드로
-- [ ] **Blink 대신 Serial**: `Serial.println`이 시리얼 모니터에 찍힌다
+- [x] **Blink 대신 Serial**: `Serial.println`이 시리얼 모니터에 찍힌다
   - 이 보드는 칩 내장 USB를 쓰므로 Tools → `USB CDC On Boot` = `Enabled`, `USB Mode` = `Hardware CDC and JTAG`로 둔다
     (Disabled면 `Serial`이 USB에 연결되지 않은 UART0으로 나가서 아무것도 안 찍힌다)
   - 완료 기준: 1초마다 `millis()` 값이 찍힌다
